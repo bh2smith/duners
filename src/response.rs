@@ -2,6 +2,11 @@ use chrono::{DateTime, NaiveDateTime, Utc};
 use serde::{de, Deserialize, Deserializer};
 
 #[derive(Deserialize, Debug)]
+pub struct DuneError {
+    pub(crate) error: String,
+}
+
+#[derive(Deserialize, Debug)]
 pub struct ExecutionResponse {
     pub(crate) execution_id: String,
     // TODO use ExecutionState Enum
