@@ -1,6 +1,7 @@
 #![allow(dead_code)]
-use chrono::NaiveDateTime;
+use chrono::{DateTime, NaiveDateTime, Utc};
 use reqwest::{Error as RequestError, Response};
+use serde::de::DeserializeOwned;
 use serde::{de, Deserialize, Deserializer};
 
 const BASE_URL: &str = "https://api.dune.com/api/v1";
@@ -26,27 +27,26 @@ struct ResultMetaData {
     execution_time_millis: u32,
 }
 
-fn datetime_from_str<'de, D>(deserializer: D) -> Result<NaiveDateTime, D::Error>
+fn datetime_from_str<'de, D>(deserializer: D) -> Result<DateTime<Utc>, D::Error>
 where
     D: Deserializer<'de>,
 {
     let s: String = Deserialize::deserialize(deserializer)?;
-    // 2022-12-23T10:34:06.129331594Z
-    // TODO - use DateTime<Utc>
-    NaiveDateTime::parse_from_str(&s, "%Y-%m-%dT%H:%M:%S.%fZ").map_err(de::Error::custom)
+    // Example: 2022-12-23T10:34:06.129331594Z
+    let native = NaiveDateTime::parse_from_str(&s, "%Y-%m-%dT%H:%M:%S.%fZ").map_err(de::Error::custom);
+    Ok(DateTime::<Utc>::from_utc(native?, Utc))
 }
 
 #[derive(Deserialize, Debug)]
 struct ExecutionTimes {
-    // TODO - use DateTime<UTC>
     #[serde(deserialize_with = "datetime_from_str")]
-    submitted_at: NaiveDateTime,
+    submitted_at: DateTime<Utc>,
     #[serde(deserialize_with = "datetime_from_str")]
-    expires_at: NaiveDateTime,
+    expires_at: DateTime<Utc>,
     #[serde(deserialize_with = "datetime_from_str")]
-    execution_started_at: NaiveDateTime,
+    execution_started_at: DateTime<Utc>,
     #[serde(deserialize_with = "datetime_from_str")]
-    execution_ended_at: NaiveDateTime,
+    execution_ended_at: DateTime<Utc>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -61,14 +61,13 @@ struct GetStatusResponse {
 }
 
 #[derive(Deserialize, Debug)]
-struct ExecutionResult {
-    // TODO - how to parse Unknown Result Types?
-    // rows: Vec<T>,
+struct ExecutionResult<T> {
+    rows: Vec<T>,
     metadata: ResultMetaData,
 }
 
 #[derive(Deserialize, Debug)]
-struct GetResultResponse {
+struct GetResultResponse<T> {
     execution_id: String,
     query_id: u32,
     state: String,
@@ -77,7 +76,7 @@ struct GetResultResponse {
     //  and all sub-fields to be brought up to this layer.
     #[serde(flatten)]
     times: ExecutionTimes,
-    result: ExecutionResult,
+    result: ExecutionResult<T>,
 }
 
 struct DuneClient {
@@ -123,9 +122,12 @@ impl DuneClient {
         response.json::<GetStatusResponse>().await
     }
 
-    async fn get_results(&self, job_id: &str) -> Result<GetResultResponse, RequestError> {
+    async fn get_results<T: DeserializeOwned>(
+        &self,
+        job_id: &str,
+    ) -> Result<GetResultResponse<T>, RequestError> {
         let response = self._get(job_id, "results").await?;
-        response.json::<GetResultResponse>().await
+        response.json::<GetResultResponse<T>>().await
     }
 }
 
@@ -164,7 +166,15 @@ mod tests {
     #[tokio::test]
     async fn get_results() {
         let dune = get_dune();
-        let results = dune.get_results(JOB_ID).await.unwrap();
+
+        #[derive(Deserialize, Debug)]
+        struct ExpectedResults {
+            token: String,
+            symbol: String,
+            max_price: f64,
+        }
+
+        let results = dune.get_results::<ExpectedResults>(JOB_ID).await.unwrap();
         println!("{:?}", results);
     }
 }
