@@ -119,6 +119,7 @@ impl DuneClient {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::response::ExecutionStatus;
     use dotenv::dotenv;
     use serde::Deserialize;
     use std::env;
@@ -183,7 +184,7 @@ mod tests {
     async fn get_status() {
         let dune = get_dune();
         let status = dune.get_status(JOB_ID).await.unwrap();
-        assert_eq!(status.state, "QUERY_STATE_COMPLETED")
+        assert_eq!(status.state, ExecutionStatus::Complete)
     }
 
     #[tokio::test]
