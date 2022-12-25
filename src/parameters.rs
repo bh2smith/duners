@@ -11,23 +11,25 @@ pub enum ParameterType {
 
 #[derive(Serialize, Debug, PartialEq)]
 pub struct Parameter {
-    key: String,
+    pub key: String,
+    // #[serde(rename(serialize = "type"))]
+    #[serde(skip_serializing)]
     ptype: ParameterType,
-    value: String,
+    pub value: String,
 }
 
 impl Parameter {
-    fn date(name: &str, value: NaiveDateTime) -> Self {
+    pub fn date(name: &str, value: NaiveDateTime) -> Self {
         Parameter {
             key: String::from(name),
             ptype: ParameterType::Date,
-            // Dune date precision is to the minute.
-            // YYYY-MM-DD HH:MM
-            value: value.to_string()[..16].parse().unwrap(),
+            // Dune date precision is to the second.
+            // YYYY-MM-DD HH:MM:SS
+            value: value.to_string()[..19].parse().unwrap(),
         }
     }
 
-    fn text(name: &str, value: &str) -> Self {
+    pub fn text(name: &str, value: &str) -> Self {
         Parameter {
             key: String::from(name),
             ptype: ParameterType::Text,
@@ -35,7 +37,7 @@ impl Parameter {
         }
     }
 
-    fn number(name: &str, value: &str) -> Self {
+    pub fn number(name: &str, value: &str) -> Self {
         Parameter {
             key: String::from(name),
             ptype: ParameterType::Number,
@@ -43,12 +45,16 @@ impl Parameter {
         }
     }
 
-    fn list(name: &str, value: &str) -> Self {
+    pub fn list(name: &str, value: &str) -> Self {
         Parameter {
             key: String::from(name),
             ptype: ParameterType::Enum,
             value: String::from(value),
         }
+    }
+
+    pub fn to_dune(&self) -> String {
+        serde_json::to_string(self).unwrap()
     }
 }
 
@@ -89,10 +95,8 @@ mod tests {
             Parameter {
                 key: "MyDate".to_string(),
                 ptype: ParameterType::Date,
-                value: "2022-01-01 01:02".to_string(),
+                value: "2022-01-01 01:02:03".to_string(),
             }
         )
     }
-    #[test]
-    fn terminal_statuses() {}
 }

@@ -1,10 +1,8 @@
 use chrono::{NaiveDateTime, ParseError};
 
 pub fn date_parse(date_str: &str) -> Result<NaiveDateTime, ParseError> {
-    // Supported formats:
-    // "%Y-%m-%d" or "%Y-%m-%dT%H:%M:%S.%fZ"
-    NaiveDateTime::parse_from_str(&date_str, "%Y-%m-%dT%H:%M:%S.%fZ")
-    // Ok(DateTime::<Utc>::from_utc(native?, Utc))
+    // "%Y-%m-%dT%H:%M:%S.%fZ"
+    NaiveDateTime::parse_from_str(date_str, "%Y-%m-%dT%H:%M:%S.%fZ")
 }
 
 #[cfg(test)]
