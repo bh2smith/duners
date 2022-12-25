@@ -1,0 +1,19 @@
+name: Rust CI
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+    - run: cargo check
+    - run: cargo fmt -- --check
+    - run: cargo test
