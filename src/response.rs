@@ -158,11 +158,11 @@ mod tests {
     }
     #[test]
     fn terminal_statuses() {
-        assert_eq!(ExecutionStatus::Complete.is_terminal(), true);
-        assert_eq!(ExecutionStatus::Cancelled.is_terminal(), true);
-        assert_eq!(ExecutionStatus::Failed.is_terminal(), true);
+        assert!(ExecutionStatus::Complete.is_terminal());
+        assert!(ExecutionStatus::Cancelled.is_terminal());
+        assert!(ExecutionStatus::Failed.is_terminal());
 
-        assert_eq!(ExecutionStatus::Pending.is_terminal(), false);
-        assert_eq!(ExecutionStatus::Executing.is_terminal(), false);
+        assert!(!ExecutionStatus::Pending.is_terminal());
+        assert!(!ExecutionStatus::Executing.is_terminal());
     }
 }

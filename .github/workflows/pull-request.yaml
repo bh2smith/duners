@@ -16,4 +16,5 @@ jobs:
         toolchain: stable
     - run: cargo check
     - run: cargo fmt -- --check
+    - run: cargo clippy --locked --workspace --all-features --all-targets -- -D warnings
     - run: cargo test
