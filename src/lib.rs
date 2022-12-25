@@ -120,7 +120,6 @@ impl DuneClient {
 mod tests {
     use super::*;
     use dotenv::dotenv;
-    use serde::de::Unexpected::Str;
     use serde::Deserialize;
     use std::env;
 
@@ -139,13 +138,11 @@ mod tests {
         let dune = DuneClient {
             api_key: "Baloney".parse().unwrap(),
         };
-        // unwrap implies function success.
         let error = dune.execute_query(QUERY_ID).await.unwrap_err();
         assert_eq!(
             error,
             DuneRequestError::Dune(String::from("invalid API Key"))
         )
-        // assert_eq!(error, Error { inner: "invalid API key" });
     }
 
     #[tokio::test]
@@ -176,8 +173,8 @@ mod tests {
     #[tokio::test]
     async fn execute_query() {
         let dune = get_dune();
-        // unwrap implies function success.
         let exec = dune.execute_query(QUERY_ID).await.unwrap();
+        // Also testing cancellation!
         let cancellation = dune.cancel_execution(&exec.execution_id).await.unwrap();
         assert_eq!(cancellation.success, true);
     }
@@ -186,7 +183,7 @@ mod tests {
     async fn get_status() {
         let dune = get_dune();
         let status = dune.get_status(JOB_ID).await.unwrap();
-        println!("{:?}", status);
+        assert_eq!(status.state, "QUERY_STATE_COMPLETED")
     }
 
     #[tokio::test]
@@ -201,6 +198,11 @@ mod tests {
         }
 
         let results = dune.get_results::<ExpectedResults>(JOB_ID).await.unwrap();
-        println!("{:?}", results);
+        // Query is for the max ETH price (should only have 1 result)
+        let rows = results.result.rows;
+        assert_eq!(1, rows.len());
+        assert_eq!(rows[0].symbol, "WETH");
+        assert_eq!(rows[0].token, "\\xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2");
+        assert!(rows[0].max_price > 4148.0)
     }
 }

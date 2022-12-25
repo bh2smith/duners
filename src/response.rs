@@ -10,7 +10,7 @@ pub struct DuneError {
 pub struct ExecutionResponse {
     pub(crate) execution_id: String,
     // TODO use ExecutionState Enum
-    state: String,
+    pub state: String,
 }
 
 #[derive(Deserialize, Debug)]
@@ -20,12 +20,12 @@ pub struct CancellationResponse {
 
 #[derive(Deserialize, Debug)]
 pub struct ResultMetaData {
-    column_names: Vec<String>,
-    result_set_bytes: u16,
-    total_row_count: u32,
-    datapoint_count: u32,
-    pending_time_millis: Option<u32>,
-    execution_time_millis: u32,
+    pub column_names: Vec<String>,
+    pub result_set_bytes: u16,
+    pub total_row_count: u32,
+    pub datapoint_count: u32,
+    pub pending_time_millis: Option<u32>,
+    pub execution_time_millis: u32,
 }
 
 fn datetime_from_str<'de, D>(deserializer: D) -> Result<DateTime<Utc>, D::Error>
@@ -42,41 +42,47 @@ where
 #[derive(Deserialize, Debug)]
 pub struct ExecutionTimes {
     #[serde(deserialize_with = "datetime_from_str")]
-    submitted_at: DateTime<Utc>,
+    pub submitted_at: DateTime<Utc>,
     #[serde(deserialize_with = "datetime_from_str")]
-    expires_at: DateTime<Utc>,
+    pub expires_at: DateTime<Utc>,
     #[serde(deserialize_with = "datetime_from_str")]
-    execution_started_at: DateTime<Utc>,
+    pub execution_started_at: DateTime<Utc>,
     #[serde(deserialize_with = "datetime_from_str")]
-    execution_ended_at: DateTime<Utc>,
+    pub execution_ended_at: DateTime<Utc>,
 }
 
 #[derive(Deserialize, Debug)]
 pub struct GetStatusResponse {
-    execution_id: String,
-    query_id: u32,
-    state: String,
+    pub execution_id: String,
+    pub query_id: u32,
+    pub state: String,
     #[serde(flatten)]
-    times: ExecutionTimes,
-    queue_position: Option<u32>,
-    result_metadata: Option<ResultMetaData>,
+    pub times: ExecutionTimes,
+    pub queue_position: Option<u32>,
+    pub result_metadata: Option<ResultMetaData>,
 }
 
 #[derive(Deserialize, Debug)]
 pub struct ExecutionResult<T> {
-    rows: Vec<T>,
-    metadata: ResultMetaData,
+    pub rows: Vec<T>,
+    pub metadata: ResultMetaData,
 }
 
 #[derive(Deserialize, Debug)]
 pub struct GetResultResponse<T> {
-    execution_id: String,
-    query_id: u32,
-    state: String,
+    pub execution_id: String,
+    pub query_id: u32,
+    pub state: String,
     // TODO - this `flatten` isn't what I had hoped for.
     //  I want the `times` field to disappear
     //  and all sub-fields to be brought up to this layer.
     #[serde(flatten)]
-    times: ExecutionTimes,
-    result: ExecutionResult<T>,
+    pub times: ExecutionTimes,
+    pub result: ExecutionResult<T>,
+}
+
+impl<T> GetResultResponse<T> {
+    pub fn get_rows(self) -> Vec<T> {
+        self.result.rows
+    }
 }
