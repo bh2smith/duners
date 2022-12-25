@@ -2,13 +2,18 @@
 
 extern crate core;
 
+pub mod parameters;
 mod response;
+mod util;
 
+use crate::parameters::Parameter;
 use crate::response::{
     CancellationResponse, DuneError, ExecutionResponse, GetResultResponse, GetStatusResponse,
 };
 use reqwest::{Error, Response};
 use serde::de::DeserializeOwned;
+use serde_json::json;
+use std::collections::HashMap;
 
 const BASE_URL: &str = "https://api.dune.com/api/v1";
 
@@ -41,19 +46,24 @@ impl From<Error> for DuneRequestError {
 }
 
 impl DuneClient {
-    async fn _post(&self, route: &str) -> Result<Response, Error> {
+    async fn _post(&self, route: &str, params: Option<Vec<Parameter>>) -> Result<Response, Error> {
+        let params = params
+            .unwrap_or_default()
+            .into_iter()
+            .map(|p| (p.key, p.value))
+            .collect::<HashMap<_, _>>();
         let request_url = format!("{BASE_URL}/{route}");
         let client = reqwest::Client::new();
         client
             .post(&request_url)
             .header("x-dune-api-key", &self.api_key)
+            .json(&json!({ "query_parameters": params }))
             .send()
             .await
     }
 
     async fn _get(&self, job_id: &str, command: &str) -> Result<Response, Error> {
         let request_url = format!("{BASE_URL}/execution/{job_id}/{command}");
-        println!("{}", request_url);
         let client = reqwest::Client::new();
         client
             .get(&request_url)
@@ -75,9 +85,13 @@ impl DuneClient {
             Err(DuneRequestError::from(err))
         }
     }
-    async fn execute_query(&self, query_id: u32) -> Result<ExecutionResponse, DuneRequestError> {
+    async fn execute_query(
+        &self,
+        query_id: u32,
+        params: Option<Vec<Parameter>>,
+    ) -> Result<ExecutionResponse, DuneRequestError> {
         let response = self
-            ._post(&format!("query/{query_id}/execute"))
+            ._post(&format!("query/{query_id}/execute"), params)
             .await
             .map_err(DuneRequestError::from)?;
         DuneClient::_parse_response::<ExecutionResponse>(response).await
@@ -88,7 +102,7 @@ impl DuneClient {
         job_id: &str,
     ) -> Result<CancellationResponse, DuneRequestError> {
         let response = self
-            ._post(&format!("execution/{job_id}/cancel"))
+            ._post(&format!("execution/{job_id}/cancel"), None)
             .await
             .map_err(DuneRequestError::from)?;
         DuneClient::_parse_response::<CancellationResponse>(response).await
@@ -118,6 +132,7 @@ impl DuneClient {
 mod tests {
     use super::*;
     use crate::response::ExecutionStatus;
+    use crate::util::date_parse;
     use dotenv::dotenv;
     use serde::Deserialize;
     use std::env;
@@ -137,7 +152,7 @@ mod tests {
         let dune = DuneClient {
             api_key: "Baloney".parse().unwrap(),
         };
-        let error = dune.execute_query(QUERY_ID).await.unwrap_err();
+        let error = dune.execute_query(QUERY_ID, None).await.unwrap_err();
         assert_eq!(
             error,
             DuneRequestError::Dune(String::from("invalid API Key"))
@@ -147,7 +162,7 @@ mod tests {
     #[tokio::test]
     async fn invalid_query_id() {
         let dune = get_dune();
-        let error = dune.execute_query(u32::MAX).await.unwrap_err();
+        let error = dune.execute_query(u32::MAX, None).await.unwrap_err();
         assert_eq!(
             error,
             DuneRequestError::Dune(String::from("Query not found"))
@@ -172,10 +187,23 @@ mod tests {
     #[tokio::test]
     async fn execute_query() {
         let dune = get_dune();
-        let exec = dune.execute_query(QUERY_ID).await.unwrap();
+        let exec = dune.execute_query(QUERY_ID, None).await.unwrap();
         // Also testing cancellation!
         let cancellation = dune.cancel_execution(&exec.execution_id).await.unwrap();
         assert!(cancellation.success);
+    }
+
+    #[tokio::test]
+    async fn execute_query_with_params() {
+        let dune = get_dune();
+        let all_parameter_types = vec![
+            Parameter::date("DateField", date_parse("2022-05-04T00:00:00.0Z").unwrap()),
+            Parameter::number("NumberField", "3.1415926535"),
+            Parameter::text("TextField", "Plain Text"),
+            Parameter::list("ListField", "Option 1"),
+        ];
+        let exec_result = dune.execute_query(1215383, Some(all_parameter_types)).await;
+        assert!(exec_result.is_ok())
     }
 
     #[tokio::test]
