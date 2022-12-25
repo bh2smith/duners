@@ -8,12 +8,14 @@ mod util;
 
 use crate::parameters::Parameter;
 use crate::response::{
-    CancellationResponse, DuneError, ExecutionResponse, GetResultResponse, GetStatusResponse,
+    CancellationResponse, DuneError, ExecutionResponse, ExecutionStatus, GetResultResponse,
+    GetStatusResponse,
 };
 use reqwest::{Error, Response};
 use serde::de::DeserializeOwned;
 use serde_json::json;
 use std::collections::HashMap;
+use tokio::time::{sleep, Duration};
 
 const BASE_URL: &str = "https://api.dune.com/api/v1";
 
@@ -126,6 +128,30 @@ impl DuneClient {
             .map_err(DuneRequestError::from)?;
         DuneClient::_parse_response::<GetResultResponse<T>>(response).await
     }
+
+    async fn refresh<T: DeserializeOwned>(
+        &self,
+        query_id: u32,
+        parameters: Option<Vec<Parameter>>,
+        ping_frequency: Option<u64>,
+    ) -> Result<GetResultResponse<T>, DuneRequestError> {
+        let job_id = self.execute_query(query_id, parameters).await?.execution_id;
+        let mut status = self.get_status(&job_id).await?;
+        while !status.state.is_terminal() {
+            // TODO - use logger!
+            println!(
+                "waiting for query execution {job_id} to complete: {:?}",
+                status.state
+            );
+            sleep(Duration::from_secs(ping_frequency.unwrap_or(5))).await;
+            status = self.get_status(&job_id).await?
+        }
+        let full_response = self.get_results::<T>(&job_id).await;
+        if status.state == ExecutionStatus::Failed {
+            println!("ERROR - Execution Failed: Perhaps your query took too long to run!")
+        }
+        full_response
+    }
 }
 
 #[cfg(test)]
@@ -231,5 +257,31 @@ mod tests {
         assert_eq!(rows[0].symbol, "WETH");
         assert_eq!(rows[0].token, "\\xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2");
         assert!(rows[0].max_price > 4148.0)
+    }
+
+    #[tokio::test]
+    async fn refresh() {
+        let dune = get_dune();
+
+        #[derive(Deserialize, Debug, PartialEq)]
+        struct ResultStruct {
+            text_field: String,
+            number_field: String,
+            date_field: String,
+            list_field: String,
+        }
+        let results = dune
+            .refresh::<ResultStruct>(1215383, None, None)
+            .await
+            .unwrap();
+        assert_eq!(
+            ResultStruct {
+                text_field: "Plain Text".to_string(),
+                number_field: "3.1415926535".to_string(),
+                date_field: "2022-05-04 00:00:00".to_string(),
+                list_field: "Option 1".to_string(),
+            },
+            results.get_rows()[0]
+        )
     }
 }
