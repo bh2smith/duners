@@ -18,3 +18,5 @@ jobs:
     - run: cargo fmt -- --check
     - run: cargo clippy --locked --workspace --all-features --all-targets -- -D warnings
     - run: cargo test
+      env:
+        DUNE_API_KEY: ${{ secrets.DUNE_API_KEY }}
