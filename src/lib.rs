@@ -2,7 +2,9 @@
 
 extern crate core;
 
+pub mod parameters;
 mod response;
+mod util;
 
 use crate::response::{
     CancellationResponse, DuneError, ExecutionResponse, GetResultResponse, GetStatusResponse,
