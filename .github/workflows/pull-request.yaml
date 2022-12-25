@@ -1,0 +1,22 @@
+name: Rust CI
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+    - run: cargo check
+    - run: cargo fmt -- --check
+    - run: cargo clippy --locked --workspace --all-features --all-targets -- -D warnings
+    - run: cargo test
+      env:
+        DUNE_API_KEY: ${{ secrets.DUNE_API_KEY }}

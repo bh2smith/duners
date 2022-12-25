@@ -64,16 +64,14 @@ impl DuneClient {
 
     async fn _parse_response<T: DeserializeOwned>(resp: Response) -> Result<T, DuneRequestError> {
         if resp.status().is_success() {
-            resp.json::<T>()
-                .await
-                .map_err(|e| DuneRequestError::from(e))
+            resp.json::<T>().await.map_err(DuneRequestError::from)
         } else if resp.status().is_server_error() {
             Err(DuneRequestError::Server(resp.text().await?))
         } else {
             let err = resp
                 .json::<DuneError>()
                 .await
-                .map_err(|e| DuneRequestError::from(e))?;
+                .map_err(DuneRequestError::from)?;
             Err(DuneRequestError::from(err))
         }
     }
@@ -81,7 +79,7 @@ impl DuneClient {
         let response = self
             ._post(&format!("query/{query_id}/execute"))
             .await
-            .map_err(|e| DuneRequestError::from(e))?;
+            .map_err(DuneRequestError::from)?;
         DuneClient::_parse_response::<ExecutionResponse>(response).await
     }
 
@@ -92,7 +90,7 @@ impl DuneClient {
         let response = self
             ._post(&format!("execution/{job_id}/cancel"))
             .await
-            .map_err(|e| DuneRequestError::from(e))?;
+            .map_err(DuneRequestError::from)?;
         DuneClient::_parse_response::<CancellationResponse>(response).await
     }
 
@@ -100,7 +98,7 @@ impl DuneClient {
         let response = self
             ._get(job_id, "status")
             .await
-            .map_err(|e| DuneRequestError::from(e))?;
+            .map_err(DuneRequestError::from)?;
         DuneClient::_parse_response::<GetStatusResponse>(response).await
     }
 
@@ -111,7 +109,7 @@ impl DuneClient {
         let response = self
             ._get(job_id, "results")
             .await
-            .map_err(|e| DuneRequestError::from(e))?;
+            .map_err(DuneRequestError::from)?;
         DuneClient::_parse_response::<GetResultResponse<T>>(response).await
     }
 }
@@ -177,7 +175,7 @@ mod tests {
         let exec = dune.execute_query(QUERY_ID).await.unwrap();
         // Also testing cancellation!
         let cancellation = dune.cancel_execution(&exec.execution_id).await.unwrap();
-        assert_eq!(cancellation.success, true);
+        assert!(cancellation.success);
     }
 
     #[tokio::test]
