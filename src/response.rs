@@ -99,6 +99,7 @@ pub struct ExecutionTimes {
     #[serde(deserialize_with = "datetime_from_str")]
     pub submitted_at: DateTime<Utc>,
     /// Time when execution results will no longer be stored on Dune servers.
+    /// None when query execution has not yet completed.
     #[serde(deserialize_with = "datetime_from_str")]
     pub expires_at: DateTime<Utc>,
     /// Time when query execution began.
