@@ -3,6 +3,7 @@ use crate::response::{
     CancellationResponse, DuneError, ExecutionResponse, ExecutionStatus, GetResultResponse,
     GetStatusResponse,
 };
+use log::{debug, error, info, warn};
 use reqwest::{Error, Response};
 use serde::de::DeserializeOwned;
 use serde_json::json;
@@ -70,6 +71,7 @@ impl DuneClient {
             .map(|p| (p.key, p.value))
             .collect::<HashMap<_, _>>();
         let request_url = format!("{BASE_URL}/{route}");
+        debug!("POST to {} with parameters {:?}", route, &params);
         let client = reqwest::Client::new();
         client
             .post(&request_url)
@@ -82,6 +84,7 @@ impl DuneClient {
     /// Internal GET request handler
     async fn _get(&self, job_id: &str, command: &str) -> Result<Response, Error> {
         let request_url = format!("{BASE_URL}/execution/{job_id}/{command}");
+        debug!("GET from {}", &request_url);
         let client = reqwest::Client::new();
         client
             .get(&request_url)
@@ -96,12 +99,15 @@ impl DuneClient {
         if resp.status().is_success() {
             resp.json::<T>().await.map_err(DuneRequestError::from)
         } else if resp.status().is_server_error() {
-            Err(DuneRequestError::Server(resp.text().await?))
+            let text = resp.text().await?;
+            error!("got server error {}", &text);
+            Err(DuneRequestError::Server(text))
         } else {
             let err = resp
                 .json::<DuneError>()
                 .await
                 .map_err(DuneRequestError::from)?;
+            error!("request error {:?}", &err);
             Err(DuneRequestError::from(err))
         }
     }
@@ -203,8 +209,7 @@ impl DuneClient {
         let job_id = self.execute_query(query_id, parameters).await?.execution_id;
         let mut status = self.get_status(&job_id).await?;
         while !status.state.is_terminal() {
-            // TODO - use logger!
-            println!(
+            info!(
                 "waiting for query execution {job_id} to complete: {:?}",
                 status.state
             );
@@ -213,7 +218,10 @@ impl DuneClient {
         }
         let full_response = self.get_results::<T>(&job_id).await;
         if status.state == ExecutionStatus::Failed {
-            println!("ERROR - Execution Failed: Perhaps your query took too long to run!")
+            warn!(
+                "{:?} Perhaps your query took too long to run!",
+                status.state
+            );
         }
         full_response
     }
