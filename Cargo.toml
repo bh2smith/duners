@@ -1,7 +1,14 @@
 [package]
 name = "duners"
 version = "0.0.1"
+authors = ["Ben Smith <bh2smith@gmail.com>"]
 edition = "2021"
+description = "A simple framework for fetching query results from with [Dune Analytics API](https://dune.com/docs/api/)."
+documentation = "https://docs.rs/duners"
+readme = "README.md"
+repository = "https://github.com/bh2smith/duners/"
+license = "MIT OR Apache-2.0"
+keywords = ["dune", "ethereum", "api-client", "web3", "dune-analytics"]
 
 [dependencies]
 chrono = { version ="0.4.23", features = ["serde", "rustc-serialize"] }
