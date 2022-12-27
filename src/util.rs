@@ -11,7 +11,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn new_parameter() {
+    fn date_parse_works() {
         let date_str = "2022-01-01T01:02:03.123Z";
         assert_eq!(
             date_parse(date_str).unwrap().to_string(),
