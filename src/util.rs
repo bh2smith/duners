@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use chrono::{NaiveDateTime, ParseError};
 
 pub fn date_parse(date_str: &str) -> Result<NaiveDateTime, ParseError> {
