@@ -187,7 +187,7 @@ impl DuneClient {
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), DuneRequestError> {
-    /// dotenv().ok();
+    ///     dotenv().ok();
     ///     let dune = DuneClient::new(env::var("DUNE_API_KEY").unwrap());
     ///     let results = dune.refresh::<ResultStruct>(1215383, None, None).await?;
     ///     println!("{:?}", results.get_rows());

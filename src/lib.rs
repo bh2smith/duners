@@ -1,6 +1,4 @@
-extern crate core;
-
-/// Dune Client structure and all API route implementations.
+/// DuneClient structure and all API route implementations.
 pub mod client;
 /// Content related to Query Parameters.
 pub mod parameters;
