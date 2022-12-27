@@ -3,18 +3,24 @@ use serde::{de, Deserialize, Deserializer};
 use serde_with::DeserializeFromStr;
 use std::str::FromStr;
 
+/// Encapsulates any "unexpected" data
+/// returned from Dune upon bad request.
 #[derive(Deserialize, Debug)]
 pub struct DuneError {
     pub error: String,
 }
 
+/// Returned from successful call to `DuneClient::execute_query`
 #[derive(Deserialize, Debug)]
 pub struct ExecutionResponse {
     pub execution_id: String,
-    // TODO use ExecutionState Enum
-    pub state: String,
+    pub state: ExecutionStatus,
 }
 
+/// Represents all possible states of query execution.
+/// Most states are self explanatory.
+/// Failure can occur if query takes too long (30 minutes) to execute.
+/// Pending state also comes along with a "queue position"
 #[derive(DeserializeFromStr, Debug, PartialEq)]
 pub enum ExecutionStatus {
     Complete,
@@ -40,6 +46,8 @@ impl FromStr for ExecutionStatus {
 }
 
 impl ExecutionStatus {
+    /// utility method for terminal query execution status.
+    /// The three terminal states are complete, cancelled and failed.
     pub fn is_terminal(&self) -> bool {
         match self {
             ExecutionStatus::Complete => true,
@@ -51,11 +59,16 @@ impl ExecutionStatus {
     }
 }
 
+/// Returned from call to `DuneClient::cancel_execution`
 #[derive(Deserialize, Debug)]
 pub struct CancellationResponse {
+    /// true when cancellation was successful, otherwise false.
     pub success: bool,
 }
 
+/// Meta content returned optionally
+/// with [GetStatusResponse](GetStatusResponse)
+/// and always contained in [ExecutionResult](ExecutionResult).
 #[derive(Deserialize, Debug)]
 pub struct ResultMetaData {
     pub column_names: Vec<String>,
@@ -77,18 +90,29 @@ where
     Ok(DateTime::<Utc>::from_utc(native?, Utc))
 }
 
+/// Nested inside [GetStatusResponse](GetStatusResponse)
+/// and [GetResultResponse](GetResultResponse).
+/// Contains several UTC timestamps related to the query execution.
 #[derive(Deserialize, Debug)]
 pub struct ExecutionTimes {
+    /// Time when query execution was submitted.
     #[serde(deserialize_with = "datetime_from_str")]
     pub submitted_at: DateTime<Utc>,
+    /// Time when execution results will no longer be stored on Dune servers.
+    /// None when query execution has not yet completed.
     #[serde(deserialize_with = "datetime_from_str")]
     pub expires_at: DateTime<Utc>,
+    /// Time when query execution began.
+    /// Differs from `submitted_at` if execution was pending in the queue.
     #[serde(deserialize_with = "datetime_from_str")]
     pub execution_started_at: DateTime<Utc>,
+    /// Time that query execution completed.
     #[serde(deserialize_with = "datetime_from_str")]
     pub execution_ended_at: DateTime<Utc>,
 }
 
+/// Returned by successful call to `DuneClient::get_status`.
+/// Indicates the current state of execution along with some metadata.
 #[derive(Deserialize, Debug)]
 pub struct GetStatusResponse {
     pub execution_id: String,
@@ -96,16 +120,25 @@ pub struct GetStatusResponse {
     pub state: ExecutionStatus,
     #[serde(flatten)]
     pub times: ExecutionTimes,
+    /// If the query state is Pending,
+    /// then there will be an associated integer indicating queue position.
     pub queue_position: Option<u32>,
+    /// This field will be non-empty once query execution has completed.
     pub result_metadata: Option<ResultMetaData>,
 }
 
+/// Contains the query results along with some additional metadata.
+/// This struct is nested inside [GetResultResponse](GetResultResponse)
+/// as the `result` field.
 #[derive(Deserialize, Debug)]
 pub struct ExecutionResult<T> {
     pub rows: Vec<T>,
     pub metadata: ResultMetaData,
 }
 
+/// Returned by a successful call to `DuneClient::get_results`.
+/// Contains similar information to [GetStatusResponse](GetStatusResponse)
+/// except that [ResultMetaData](ResultMetaData) is contained within the `result` field.
 #[derive(Deserialize, Debug)]
 pub struct GetResultResponse<T> {
     pub execution_id: String,
@@ -120,6 +153,7 @@ pub struct GetResultResponse<T> {
 }
 
 impl<T> GetResultResponse<T> {
+    /// Convenience method for fetching the "deeply" nested `rows` of the result response.
     pub fn get_rows(self) -> Vec<T> {
         self.result.rows
     }
