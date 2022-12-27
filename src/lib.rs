@@ -3,7 +3,7 @@
 extern crate core;
 
 pub mod parameters;
-mod response;
+pub mod response;
 mod util;
 
 use crate::parameters::Parameter;
@@ -19,20 +19,34 @@ use tokio::time::{sleep, Duration};
 
 const BASE_URL: &str = "https://api.dune.com/api/v1";
 
+/// DuneClient provides an interface for interacting with Dune Analytics API.
+/// Official Documentation here: [https://dune.com/docs/api/](https://dune.com/docs/api/)
+/// Elementary Routes (i.e. those provided by Dune)
+/// - POST
+///     - execute_query
+///     - cancel_execution
+/// - GET
+///     - get_status
+///     - get_results
+/// Furthermore, this interface also implements a convenience method `refresh`
+/// which acts as follows:
+/// 1. Execute query
+/// 2. While execution status is not in a terminal state, sleep and check again
+/// 3. Get and return execution results.
 pub struct DuneClient {
+    /// An essential value for request authentication.
     api_key: String,
 }
 
 #[derive(Debug, PartialEq)]
 enum DuneRequestError {
-    // Includes known errors:
-    // "invalid API Key"
-    // "Query not found"
-    // "The requested execution ID (ID: wonky job ID) is invalid."
+    /// Includes known errors:
+    /// "invalid API Key"
+    /// "Query not found"
+    /// "The requested execution ID (ID: wonky job ID) is invalid."
     Dune(String),
-    // Stuff coming from reqwest::Error
+    /// Errors bubbled up from reqwest::Error
     Request(String),
-    Server(String),
 }
 
 impl From<DuneError> for DuneRequestError {
@@ -48,6 +62,12 @@ impl From<Error> for DuneRequestError {
 }
 
 impl DuneClient {
+    /// Constructor
+    pub fn new(api_key: String) -> Self {
+        DuneClient { api_key }
+    }
+
+    /// Internal POST request handler
     async fn _post(&self, route: &str, params: Option<Vec<Parameter>>) -> Result<Response, Error> {
         let params = params
             .unwrap_or_default()
@@ -64,6 +84,7 @@ impl DuneClient {
             .await
     }
 
+    /// Internal GET request handler
     async fn _get(&self, job_id: &str, command: &str) -> Result<Response, Error> {
         let request_url = format!("{BASE_URL}/execution/{job_id}/{command}");
         let client = reqwest::Client::new();
@@ -74,6 +95,8 @@ impl DuneClient {
             .await
     }
 
+    /// Deserializes Responses into appropriate type.
+    /// Some "invalid" requests return response JSON, which are parsed an returned as Errors.
     async fn _parse_response<T: DeserializeOwned>(resp: Response) -> Result<T, DuneRequestError> {
         if resp.status().is_success() {
             resp.json::<T>().await.map_err(DuneRequestError::from)
@@ -87,7 +110,10 @@ impl DuneClient {
             Err(DuneRequestError::from(err))
         }
     }
-    async fn execute_query(
+
+    /// Execute Query (with or without parameters)
+    /// cf. [https://dune.com/docs/api/api-reference/execute-query-id](https://dune.com/docs/api/api-reference/execute-query-id)
+    pub async fn execute_query(
         &self,
         query_id: u32,
         params: Option<Vec<Parameter>>,
@@ -99,7 +125,9 @@ impl DuneClient {
         DuneClient::_parse_response::<ExecutionResponse>(response).await
     }
 
-    async fn cancel_execution(
+    /// Cancel Query Execution by `job_id`
+    /// cf. [https://dune.com/docs/api/api-reference/cancel-execution/](https://dune.com/docs/api/api-reference/cancel-execution/))
+    pub async fn cancel_execution(
         &self,
         job_id: &str,
     ) -> Result<CancellationResponse, DuneRequestError> {
@@ -110,7 +138,9 @@ impl DuneClient {
         DuneClient::_parse_response::<CancellationResponse>(response).await
     }
 
-    async fn get_status(&self, job_id: &str) -> Result<GetStatusResponse, DuneRequestError> {
+    /// Get Query Execution Status (by `job_id`)
+    /// cf. [https://dune.com/docs/api/api-reference/execution-status/](https://dune.com/docs/api/api-reference/execution-status/)
+    pub async fn get_status(&self, job_id: &str) -> Result<GetStatusResponse, DuneRequestError> {
         let response = self
             ._get(job_id, "status")
             .await
@@ -118,7 +148,9 @@ impl DuneClient {
         DuneClient::_parse_response::<GetStatusResponse>(response).await
     }
 
-    async fn get_results<T: DeserializeOwned>(
+    /// Get Query Execution Results (by `job_id`)
+    /// cf. [https://dune.com/docs/api/api-reference/execution-results/](https://dune.com/docs/api/api-reference/execution-results/)
+    pub async fn get_results<T: DeserializeOwned>(
         &self,
         job_id: &str,
     ) -> Result<GetResultResponse<T>, DuneRequestError> {
@@ -129,7 +161,43 @@ impl DuneClient {
         DuneClient::_parse_response::<GetResultResponse<T>>(response).await
     }
 
-    async fn refresh<T: DeserializeOwned>(
+    /// Convenience method for users to
+    /// 1. execute,
+    /// 2. wait for execution to complete,
+    /// 3. fetch and return query results.
+    /// # Arguments
+    /// * `query_id` - an integer representing query ID
+    ///             (found at the end of a Dune Query URL: [https://dune.com/queries/971694](https://dune.com/queries/971694))
+    /// * `parameters` - an optional list of query `Parameter`
+    ///             (cf. [https://dune.xyz/queries/1215383](https://dune.xyz/queries/1215383))
+    /// * `ping_frequency` - how frequently (in seconds) should the loop check execution status.
+    ///             Default is 5 seconds. Too frequently could result in rate limiting
+    ///             (i.e. Too Many Requests) especially when executing multiple queries in parallel.
+    ///
+    /// # Examples
+    /// ```
+    /// use std::env;
+    /// use dotenv::dotenv;
+    /// use duners::DuneClient;
+    /// // User must declare the expected query return types and fields.
+    /// #[derive(Deserialize, Debug, PartialEq)]
+    /// struct ResultStruct {
+    ///     text_field: String,
+    ///     number_field: String,
+    ///     date_field: String,
+    ///     list_field: String,
+    /// }
+    ///
+    /// #[tokio::main]
+    /// async fn main() -> Result<(), ()> {
+    ///     dotenv().ok();
+    ///     let dune = DuneClient::new(env::var("DUNE_API_KEY").unwrap());
+    ///     let results = dune.refresh::<ResultStruct>(1215383, None, None).await?;
+    ///     println!("{:?}", results.get_rows());
+    ///     Ok(())
+    /// }
+    /// ```
+    pub async fn refresh<T: DeserializeOwned>(
         &self,
         query_id: u32,
         parameters: Option<Vec<Parameter>>,
