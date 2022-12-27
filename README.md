@@ -14,7 +14,7 @@ use dotenv::dotenv;
 use duners::client::{DuneClient, DuneRequestError};
 use serde::Deserialize;
 
-// User must declare the expected query return types and fields.
+// User must declare the expected query return fields and types!
 #[derive(Deserialize, Debug, PartialEq)]
 struct ResultStruct {
     text_field: String,
