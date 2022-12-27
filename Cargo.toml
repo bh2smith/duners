@@ -8,7 +8,7 @@ documentation = "https://docs.rs/duners"
 readme = "README.md"
 repository = "https://github.com/bh2smith/duners/"
 license = "MIT OR Apache-2.0"
-keywords = ["dune", "api", "client", "ethereum", "analytics", "api-client", "web3", "dune-analytics"]
+keywords = ["dune", "ethereum", "api-client", "web3", "dune-analytics"]
 
 [dependencies]
 chrono = { version ="0.4.23", features = ["serde", "rustc-serialize"] }
