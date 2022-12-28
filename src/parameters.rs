@@ -1,24 +1,33 @@
 use chrono::NaiveDateTime;
-use serde::Serialize;
 
-#[derive(Serialize, Debug, PartialEq)]
-pub enum ParameterType {
+/// Dune supports 4 different parameter types enumerated here:
+/// In end, all parameters are passed to
+/// Dune via the API as JSON strings.
+#[derive(Debug, PartialEq)]
+enum ParameterType {
+    /// A.k.a. string (used for transaction hashes and evm addresses, etc.)
     Text,
+    /// Encapsulates all numerical types (integer and float).
     Number,
+    /// A.k.a List or Dropdown of text.
     Enum,
+    /// Dune Date strings take the form `YYYY-MM-DD hh:mm:ss`
     Date,
 }
 
-#[derive(Serialize, Debug, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub struct Parameter {
+    /// Parameter Name.
     pub key: String,
-    // #[serde(rename(serialize = "type"))]
-    #[serde(skip_serializing)]
+    /// Currently unused type field
+    /// (will become relevant when API supports `upsert_query`)
     ptype: ParameterType,
+    /// String representation of parameter's value
     pub value: String,
 }
 
 impl Parameter {
+    /// Constructor of Date type Parameter
     pub fn date(name: &str, value: NaiveDateTime) -> Self {
         Parameter {
             key: String::from(name),
@@ -29,6 +38,7 @@ impl Parameter {
         }
     }
 
+    /// Constructor of Text type Parameter
     pub fn text(name: &str, value: &str) -> Self {
         Parameter {
             key: String::from(name),
@@ -37,6 +47,7 @@ impl Parameter {
         }
     }
 
+    /// Constructor of Numeric type Parameter
     pub fn number(name: &str, value: &str) -> Self {
         Parameter {
             key: String::from(name),
@@ -45,16 +56,13 @@ impl Parameter {
         }
     }
 
+    /// Constructor of List/Enum type Parameter
     pub fn list(name: &str, value: &str) -> Self {
         Parameter {
             key: String::from(name),
             ptype: ParameterType::Enum,
             value: String::from(value),
         }
-    }
-
-    pub fn to_dune(&self) -> String {
-        serde_json::to_string(self).unwrap()
     }
 }
 
@@ -98,5 +106,14 @@ mod tests {
                 value: "2022-01-01 01:02:03".to_string(),
             }
         )
+    }
+
+    #[test]
+    fn derived_debug() {
+        assert_eq!(format!("{:?}", ParameterType::Date), "Date");
+        assert_eq!(
+            format!("{:?}", Parameter::number("MyNumber", "3.14159")),
+            "Parameter { key: \"MyNumber\", ptype: Number, value: \"3.14159\" }"
+        );
     }
 }

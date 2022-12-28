@@ -41,8 +41,6 @@ pub enum DuneRequestError {
     Dune(String),
     /// Errors bubbled up from reqwest::Error
     Request(String),
-    /// Also a reqwest::Error, but coming one whose status is server error
-    Server(String),
 }
 
 impl From<DuneError> for DuneRequestError {
@@ -98,10 +96,6 @@ impl DuneClient {
     async fn _parse_response<T: DeserializeOwned>(resp: Response) -> Result<T, DuneRequestError> {
         if resp.status().is_success() {
             resp.json::<T>().await.map_err(DuneRequestError::from)
-        } else if resp.status().is_server_error() {
-            let text = resp.text().await?;
-            error!("got server error {}", &text);
-            Err(DuneRequestError::Server(text))
         } else {
             let err = resp
                 .json::<DuneError>()
@@ -244,6 +238,15 @@ mod tests {
         DuneClient {
             api_key: env::var("DUNE_API_KEY").unwrap(),
         }
+    }
+
+    #[tokio::test]
+    async fn error_parsing() {
+        let err = reqwest::get("invalid-url").await.unwrap_err();
+        assert_eq!(
+            DuneRequestError::from(err),
+            DuneRequestError::Request("builder error: relative URL without a base".to_string())
+        );
     }
 
     #[tokio::test]

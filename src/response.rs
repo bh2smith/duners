@@ -190,6 +190,7 @@ mod tests {
             Ok(ExecutionStatus::Failed)
         );
     }
+
     #[test]
     fn terminal_statuses() {
         assert!(ExecutionStatus::Complete.is_terminal());
@@ -198,5 +199,128 @@ mod tests {
 
         assert!(!ExecutionStatus::Pending.is_terminal());
         assert!(!ExecutionStatus::Executing.is_terminal());
+    }
+    #[test]
+    fn derive_debug() {
+        assert_eq!(
+            format!(
+                "{:?}",
+                DuneError {
+                    error: "broken".to_string()
+                }
+            ),
+            "DuneError { error: \"broken\" }"
+        );
+        assert_eq!(
+            format!(
+                "{:?}",
+                ExecutionResponse {
+                    execution_id: "jerb".to_string(),
+                    state: ExecutionStatus::Failed
+                }
+            ),
+            "ExecutionResponse { execution_id: \"jerb\", state: Failed }"
+        );
+        assert_eq!(
+            format!("{:?}", CancellationResponse { success: false }),
+            "CancellationResponse { success: false }"
+        );
+        let query_id = 71;
+        let execution_id = "jerb ID";
+
+        assert_eq!(
+            format!(
+                "{:?}",
+                GetStatusResponse {
+                    execution_id: execution_id.to_string(),
+                    query_id,
+                    state: ExecutionStatus::Pending,
+                    times: ExecutionTimes {
+                        submitted_at: Default::default(),
+                        expires_at: Default::default(),
+                        execution_started_at: Default::default(),
+                        execution_ended_at: Default::default(),
+                    },
+                    queue_position: Some(10),
+                    result_metadata: Some(ResultMetaData {
+                        column_names: vec![],
+                        result_set_bytes: 0,
+                        total_row_count: 0,
+                        datapoint_count: 0,
+                        pending_time_millis: None,
+                        execution_time_millis: 0,
+                    }),
+                }
+            ),
+            "GetStatusResponse { \
+                execution_id: \"jerb ID\", \
+                query_id: 71, \
+                state: Pending, \
+                times: ExecutionTimes { \
+                    submitted_at: 1970-01-01T00:00:00Z, \
+                    expires_at: 1970-01-01T00:00:00Z, \
+                    execution_started_at: 1970-01-01T00:00:00Z, \
+                    execution_ended_at: 1970-01-01T00:00:00Z \
+                }, \
+                queue_position: Some(10), \
+                result_metadata: Some(ResultMetaData { \
+                        column_names: [], \
+                        result_set_bytes: 0, \
+                        total_row_count: 0, \
+                        datapoint_count: 0, \
+                        pending_time_millis: None, \
+                        execution_time_millis: 0 \
+                }\
+             ) }",
+        );
+        assert_eq!(
+            format!(
+                "{:?}",
+                GetResultResponse {
+                    execution_id: execution_id.to_string(),
+                    query_id,
+                    state: ExecutionStatus::Complete,
+                    times: ExecutionTimes {
+                        submitted_at: Default::default(),
+                        expires_at: Default::default(),
+                        execution_started_at: Default::default(),
+                        execution_ended_at: Default::default(),
+                    },
+                    result: ExecutionResult::<u8> {
+                        rows: vec![],
+                        metadata: ResultMetaData {
+                            column_names: vec![],
+                            result_set_bytes: 0,
+                            total_row_count: 0,
+                            datapoint_count: 0,
+                            pending_time_millis: None,
+                            execution_time_millis: 0,
+                        }
+                    },
+                }
+            ),
+            "GetResultResponse { \
+                execution_id: \"jerb ID\", \
+                query_id: 71, \
+                state: Complete, \
+                times: ExecutionTimes { \
+                    submitted_at: 1970-01-01T00:00:00Z, \
+                    expires_at: 1970-01-01T00:00:00Z, \
+                    execution_started_at: 1970-01-01T00:00:00Z, \
+                    execution_ended_at: 1970-01-01T00:00:00Z \
+                }, \
+                result: ExecutionResult { \
+                    rows: [], \
+                    metadata: ResultMetaData { \
+                        column_names: [], \
+                        result_set_bytes: 0, \
+                        total_row_count: 0, \
+                        datapoint_count: 0, \
+                        pending_time_millis: None, \
+                        execution_time_millis: 0 \
+                    } \
+                } \
+            }",
+        );
     }
 }
