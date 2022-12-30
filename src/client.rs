@@ -36,10 +36,11 @@ pub struct DuneClient {
 
 impl DuneClient {
     /// Constructor
-    pub fn new(api_key: String) -> Self {
-        DuneClient { api_key }
+    pub fn new(api_key: &str) -> DuneClient {
+        DuneClient {
+            api_key: api_key.to_string(),
+        }
     }
-
     pub fn from_env() -> DuneClient {
         dotenv().ok();
         DuneClient {
@@ -157,9 +158,11 @@ impl DuneClient {
     ///
     /// # Examples
     /// ```
-    /// use std::env;
-    /// use dotenv::dotenv;
-    /// use duners::{client::DuneClient, error::DuneRequestError, dateutil::{date_parse, datetime_from_str}};
+    /// use duners::{
+    ///     client::DuneClient,
+    ///     dateutil::datetime_from_str,
+    ///     error::DuneRequestError
+    /// };
     /// use serde::Deserialize;
     /// use chrono::{DateTime, Utc};
     ///
@@ -175,8 +178,7 @@ impl DuneClient {
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), DuneRequestError> {
-    ///     dotenv().ok();
-    ///     let dune = DuneClient::new(env::var("DUNE_API_KEY").unwrap());
+    ///     let dune = DuneClient::from_env();
     ///     let results = dune.refresh::<ResultStruct>(1215383, None, None).await?;
     ///     println!("{:?}", results.get_rows());
     ///     Ok(())
@@ -223,9 +225,7 @@ mod tests {
 
     #[tokio::test]
     async fn invalid_api_key() {
-        let dune = DuneClient {
-            api_key: "Baloney".parse().unwrap(),
-        };
+        let dune = DuneClient::new("Baloney");
         let error = dune.execute_query(QUERY_ID, None).await.unwrap_err();
         assert_eq!(
             error,
