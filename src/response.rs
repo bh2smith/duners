@@ -1,15 +1,8 @@
-use crate::util::{datetime_from_str, optional_datetime_from_str};
+use crate::dateutil::{datetime_from_str, optional_datetime_from_str};
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use serde_with::DeserializeFromStr;
 use std::str::FromStr;
-
-/// Encapsulates any "unexpected" data
-/// returned from Dune upon bad request.
-#[derive(Deserialize, Debug)]
-pub struct DuneError {
-    pub error: String,
-}
 
 /// Returned from successful call to `DuneClient::execute_query`
 #[derive(Deserialize, Debug)]
@@ -195,15 +188,6 @@ mod tests {
     }
     #[test]
     fn derive_debug() {
-        assert_eq!(
-            format!(
-                "{:?}",
-                DuneError {
-                    error: "broken".to_string()
-                }
-            ),
-            "DuneError { error: \"broken\" }"
-        );
         assert_eq!(
             format!(
                 "{:?}",

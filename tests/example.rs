@@ -1,5 +1,6 @@
+use chrono::{DateTime, Utc};
 use dotenv::dotenv;
-use duners::client::DuneClient;
+use duners::{client::DuneClient, dateutil::datetime_from_str};
 use serde::Deserialize;
 use std::env;
 
@@ -7,8 +8,9 @@ use std::env;
 #[derive(Deserialize, Debug, PartialEq)]
 struct ResultStruct {
     text_field: String,
-    number_field: String,
-    date_field: String,
+    number_field: f64,
+    #[serde(deserialize_with = "datetime_from_str")]
+    date_field: DateTime<Utc>,
     list_field: String,
 }
 

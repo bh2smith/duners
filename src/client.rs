@@ -1,8 +1,7 @@
-use crate::error::DuneRequestError;
+use crate::error::{DuneError, DuneRequestError};
 use crate::parameters::Parameter;
 use crate::response::{
-    CancellationResponse, DuneError, ExecutionResponse, ExecutionStatus, GetResultResponse,
-    GetStatusResponse,
+    CancellationResponse, ExecutionResponse, ExecutionStatus, GetResultResponse, GetStatusResponse,
 };
 use dotenv::dotenv;
 use log::{debug, error, info, warn};
@@ -160,16 +159,17 @@ impl DuneClient {
     /// ```
     /// use std::env;
     /// use dotenv::dotenv;
-    /// use duners::client::DuneClient;
-    /// use duners::error::DuneRequestError;
+    /// use duners::{client::DuneClient, error::DuneRequestError, dateutil::{date_parse, datetime_from_str}};
     /// use serde::Deserialize;
+    /// use chrono::{DateTime, Utc};
     ///
     /// // User must declare the expected query return types and fields.
     /// #[derive(Deserialize, Debug, PartialEq)]
     /// struct ResultStruct {
     ///     text_field: String,
-    ///     number_field: String,
-    ///     date_field: String,
+    ///     number_field: f64,
+    ///     #[serde(deserialize_with = "datetime_from_str")]
+    ///     date_field: DateTime<Utc>,
     ///     list_field: String,
     /// }
     ///
@@ -213,22 +213,13 @@ impl DuneClient {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::dateutil::{date_parse, datetime_from_str};
     use crate::response::ExecutionStatus;
-    use crate::util::{date_parse, datetime_from_str};
     use chrono::{DateTime, Utc};
     use serde::Deserialize;
 
     const QUERY_ID: u32 = 971694;
     const JOB_ID: &str = "01GMZ8R4NPPQZCWYJRY2K03MH0";
-
-    #[tokio::test]
-    async fn error_parsing() {
-        let err = reqwest::get("invalid-url").await.unwrap_err();
-        assert_eq!(
-            DuneRequestError::from(err),
-            DuneRequestError::Request("builder error: relative URL without a base".to_string())
-        );
-    }
 
     #[tokio::test]
     async fn invalid_api_key() {
