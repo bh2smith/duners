@@ -29,6 +29,7 @@ impl DuneClient {
 mod tests {
     use crate::{client::DuneClient, dateutil::datetime_from_str};
     use chrono::{DateTime, Utc};
+    use polars::export::ahash::HashMap;
     use serde::{Deserialize, Serialize};
 
     #[tokio::test]
@@ -46,6 +47,16 @@ mod tests {
 
         let df = dune
             .fetch_as_dataframe::<ResultStruct>(1215383, None, None)
+            .await
+            .unwrap();
+        println!("{:?}", df);
+    }
+
+    #[tokio::test]
+    async fn lazy_fetch_as_dataframe() {
+        let dune = DuneClient::from_env();
+        let df = dune
+            .fetch_as_dataframe::<HashMap<String, String>>(1215383, None, None)
             .await
             .unwrap();
         println!("{:?}", df);
