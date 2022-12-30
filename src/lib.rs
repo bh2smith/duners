@@ -1,5 +1,7 @@
 /// DuneClient structure and all API route implementations.
 pub mod client;
+/// Fetches and parses Dune Query results as Dataframe
+pub mod dataframe;
 /// Utility Methods (primarily for date parsing)
 pub mod dateutil;
 /// DuneRequestError (encapsulating all errors that could arise within network requests and result parsing)
