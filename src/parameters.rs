@@ -1,4 +1,4 @@
-use chrono::NaiveDateTime;
+use chrono::{DateTime, Utc};
 
 /// Dune supports 4 different parameter types enumerated here:
 /// In end, all parameters are passed to
@@ -28,7 +28,7 @@ pub struct Parameter {
 
 impl Parameter {
     /// Constructor of Date type Parameter
-    pub fn date(name: &str, value: NaiveDateTime) -> Self {
+    pub fn date(name: &str, value: DateTime<Utc>) -> Self {
         Parameter {
             key: String::from(name),
             ptype: ParameterType::Date,
@@ -69,7 +69,7 @@ impl Parameter {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::date_parse;
+    use crate::dateutil::date_parse;
 
     #[test]
     fn new_parameter() {

@@ -1,14 +1,8 @@
-use chrono::{DateTime, NaiveDateTime, Utc};
-use serde::{de, Deserialize, Deserializer};
+use crate::dateutil::{datetime_from_str, optional_datetime_from_str};
+use chrono::{DateTime, Utc};
+use serde::Deserialize;
 use serde_with::DeserializeFromStr;
 use std::str::FromStr;
-
-/// Encapsulates any "unexpected" data
-/// returned from Dune upon bad request.
-#[derive(Deserialize, Debug)]
-pub struct DuneError {
-    pub error: String,
-}
 
 /// Returned from successful call to `DuneClient::execute_query`
 #[derive(Deserialize, Debug)]
@@ -79,17 +73,6 @@ pub struct ResultMetaData {
     pub execution_time_millis: u32,
 }
 
-fn datetime_from_str<'de, D>(deserializer: D) -> Result<DateTime<Utc>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let s: String = Deserialize::deserialize(deserializer)?;
-    // Example: 2022-12-23T10:34:06.129331594Z
-    let native =
-        NaiveDateTime::parse_from_str(&s, "%Y-%m-%dT%H:%M:%S.%fZ").map_err(de::Error::custom);
-    Ok(DateTime::<Utc>::from_utc(native?, Utc))
-}
-
 /// Nested inside [GetStatusResponse](GetStatusResponse)
 /// and [GetResultResponse](GetResultResponse).
 /// Contains several UTC timestamps related to the query execution.
@@ -100,15 +83,18 @@ pub struct ExecutionTimes {
     pub submitted_at: DateTime<Utc>,
     /// Time when execution results will no longer be stored on Dune servers.
     /// None when query execution has not yet completed.
-    #[serde(deserialize_with = "datetime_from_str")]
-    pub expires_at: DateTime<Utc>,
+    #[serde(deserialize_with = "optional_datetime_from_str", default)]
+    pub expires_at: Option<DateTime<Utc>>,
     /// Time when query execution began.
     /// Differs from `submitted_at` if execution was pending in the queue.
-    #[serde(deserialize_with = "datetime_from_str")]
-    pub execution_started_at: DateTime<Utc>,
+    #[serde(deserialize_with = "optional_datetime_from_str", default)]
+    pub execution_started_at: Option<DateTime<Utc>>,
     /// Time that query execution completed.
-    #[serde(deserialize_with = "datetime_from_str")]
-    pub execution_ended_at: DateTime<Utc>,
+    #[serde(deserialize_with = "optional_datetime_from_str", default)]
+    pub execution_ended_at: Option<DateTime<Utc>>,
+    /// Time that query execution was cancelled.
+    #[serde(deserialize_with = "optional_datetime_from_str", default)]
+    pub cancelled_at: Option<DateTime<Utc>>,
 }
 
 /// Returned by successful call to `DuneClient::get_status`.
@@ -205,15 +191,6 @@ mod tests {
         assert_eq!(
             format!(
                 "{:?}",
-                DuneError {
-                    error: "broken".to_string()
-                }
-            ),
-            "DuneError { error: \"broken\" }"
-        );
-        assert_eq!(
-            format!(
-                "{:?}",
                 ExecutionResponse {
                     execution_id: "jerb".to_string(),
                     state: ExecutionStatus::Failed
@@ -240,6 +217,7 @@ mod tests {
                         expires_at: Default::default(),
                         execution_started_at: Default::default(),
                         execution_ended_at: Default::default(),
+                        cancelled_at: Default::default(),
                     },
                     queue_position: Some(10),
                     result_metadata: Some(ResultMetaData {
@@ -258,9 +236,10 @@ mod tests {
                 state: Pending, \
                 times: ExecutionTimes { \
                     submitted_at: 1970-01-01T00:00:00Z, \
-                    expires_at: 1970-01-01T00:00:00Z, \
-                    execution_started_at: 1970-01-01T00:00:00Z, \
-                    execution_ended_at: 1970-01-01T00:00:00Z \
+                    expires_at: None, \
+                    execution_started_at: None, \
+                    execution_ended_at: None, \
+                    cancelled_at: None \
                 }, \
                 queue_position: Some(10), \
                 result_metadata: Some(ResultMetaData { \
@@ -285,6 +264,7 @@ mod tests {
                         expires_at: Default::default(),
                         execution_started_at: Default::default(),
                         execution_ended_at: Default::default(),
+                        cancelled_at: Default::default(),
                     },
                     result: ExecutionResult::<u8> {
                         rows: vec![],
@@ -305,9 +285,10 @@ mod tests {
                 state: Complete, \
                 times: ExecutionTimes { \
                     submitted_at: 1970-01-01T00:00:00Z, \
-                    expires_at: 1970-01-01T00:00:00Z, \
-                    execution_started_at: 1970-01-01T00:00:00Z, \
-                    execution_ended_at: 1970-01-01T00:00:00Z \
+                    expires_at: None, \
+                    execution_started_at: None, \
+                    execution_ended_at: None, \
+                    cancelled_at: None \
                 }, \
                 result: ExecutionResult { \
                     rows: [], \

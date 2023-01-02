@@ -1,13 +1,15 @@
+use crate::error::{DuneError, DuneRequestError};
 use crate::parameters::Parameter;
 use crate::response::{
-    CancellationResponse, DuneError, ExecutionResponse, ExecutionStatus, GetResultResponse,
-    GetStatusResponse,
+    CancellationResponse, ExecutionResponse, ExecutionStatus, GetResultResponse, GetStatusResponse,
 };
+use dotenv::dotenv;
 use log::{debug, error, info, warn};
 use reqwest::{Error, Response};
 use serde::de::DeserializeOwned;
 use serde_json::json;
 use std::collections::HashMap;
+use std::env;
 use tokio::time::{sleep, Duration};
 
 const BASE_URL: &str = "https://api.dune.com/api/v1";
@@ -32,33 +34,18 @@ pub struct DuneClient {
     api_key: String,
 }
 
-#[derive(Debug, PartialEq)]
-pub enum DuneRequestError {
-    /// Includes known errors:
-    /// "invalid API Key"
-    /// "Query not found"
-    /// "The requested execution ID (ID: wonky job ID) is invalid."
-    Dune(String),
-    /// Errors bubbled up from reqwest::Error
-    Request(String),
-}
-
-impl From<DuneError> for DuneRequestError {
-    fn from(value: DuneError) -> Self {
-        DuneRequestError::Dune(value.error)
-    }
-}
-
-impl From<Error> for DuneRequestError {
-    fn from(value: Error) -> Self {
-        DuneRequestError::Request(value.to_string())
-    }
-}
-
 impl DuneClient {
     /// Constructor
-    pub fn new(api_key: String) -> Self {
-        DuneClient { api_key }
+    pub fn new(api_key: &str) -> DuneClient {
+        DuneClient {
+            api_key: api_key.to_string(),
+        }
+    }
+    pub fn from_env() -> DuneClient {
+        dotenv().ok();
+        DuneClient {
+            api_key: env::var("DUNE_API_KEY").unwrap(),
+        }
     }
 
     /// Internal POST request handler
@@ -171,24 +158,27 @@ impl DuneClient {
     ///
     /// # Examples
     /// ```
-    /// use std::env;
-    /// use dotenv::dotenv;
-    /// use duners::client::{DuneClient, DuneRequestError};
+    /// use duners::{
+    ///     client::DuneClient,
+    ///     dateutil::datetime_from_str,
+    ///     error::DuneRequestError
+    /// };
     /// use serde::Deserialize;
+    /// use chrono::{DateTime, Utc};
     ///
     /// // User must declare the expected query return types and fields.
     /// #[derive(Deserialize, Debug, PartialEq)]
     /// struct ResultStruct {
     ///     text_field: String,
-    ///     number_field: String,
-    ///     date_field: String,
+    ///     number_field: f64,
+    ///     #[serde(deserialize_with = "datetime_from_str")]
+    ///     date_field: DateTime<Utc>,
     ///     list_field: String,
     /// }
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), DuneRequestError> {
-    ///     dotenv().ok();
-    ///     let dune = DuneClient::new(env::var("DUNE_API_KEY").unwrap());
+    ///     let dune = DuneClient::from_env();
     ///     let results = dune.refresh::<ResultStruct>(1215383, None, None).await?;
     ///     println!("{:?}", results.get_rows());
     ///     Ok(())
@@ -201,6 +191,7 @@ impl DuneClient {
         ping_frequency: Option<u64>,
     ) -> Result<GetResultResponse<T>, DuneRequestError> {
         let job_id = self.execute_query(query_id, parameters).await?.execution_id;
+        info!("Refreshing {} Execution ID {}", query_id, job_id);
         let mut status = self.get_status(&job_id).await?;
         while !status.state.is_terminal() {
             info!(
@@ -224,36 +215,17 @@ impl DuneClient {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::dateutil::{date_parse, datetime_from_str};
     use crate::response::ExecutionStatus;
-    use crate::util::date_parse;
-    use dotenv::dotenv;
+    use chrono::{DateTime, Utc};
     use serde::Deserialize;
-    use std::env;
 
     const QUERY_ID: u32 = 971694;
     const JOB_ID: &str = "01GMZ8R4NPPQZCWYJRY2K03MH0";
 
-    fn get_dune() -> DuneClient {
-        dotenv().ok();
-        DuneClient {
-            api_key: env::var("DUNE_API_KEY").unwrap(),
-        }
-    }
-
-    #[tokio::test]
-    async fn error_parsing() {
-        let err = reqwest::get("invalid-url").await.unwrap_err();
-        assert_eq!(
-            DuneRequestError::from(err),
-            DuneRequestError::Request("builder error: relative URL without a base".to_string())
-        );
-    }
-
     #[tokio::test]
     async fn invalid_api_key() {
-        let dune = DuneClient {
-            api_key: "Baloney".parse().unwrap(),
-        };
+        let dune = DuneClient::new("Baloney");
         let error = dune.execute_query(QUERY_ID, None).await.unwrap_err();
         assert_eq!(
             error,
@@ -263,7 +235,7 @@ mod tests {
 
     #[tokio::test]
     async fn invalid_query_id() {
-        let dune = get_dune();
+        let dune = DuneClient::from_env();
         let error = dune.execute_query(u32::MAX, None).await.unwrap_err();
         assert_eq!(
             error,
@@ -273,7 +245,7 @@ mod tests {
 
     #[tokio::test]
     async fn invalid_job_id() {
-        let dune = get_dune();
+        let dune = DuneClient::from_env();
         let error = dune
             .get_results::<DuneError>("wonky job ID")
             .await
@@ -288,7 +260,7 @@ mod tests {
 
     #[tokio::test]
     async fn execute_query() {
-        let dune = get_dune();
+        let dune = DuneClient::from_env();
         let exec = dune.execute_query(QUERY_ID, None).await.unwrap();
         // Also testing cancellation!
         let cancellation = dune.cancel_execution(&exec.execution_id).await.unwrap();
@@ -297,7 +269,7 @@ mod tests {
 
     #[tokio::test]
     async fn execute_query_with_params() {
-        let dune = get_dune();
+        let dune = DuneClient::from_env();
         let all_parameter_types = vec![
             Parameter::date("DateField", date_parse("2022-05-04T00:00:00.0Z").unwrap()),
             Parameter::number("NumberField", "3.1415926535"),
@@ -310,14 +282,14 @@ mod tests {
 
     #[tokio::test]
     async fn get_status() {
-        let dune = get_dune();
+        let dune = DuneClient::from_env();
         let status = dune.get_status(JOB_ID).await.unwrap();
         assert_eq!(status.state, ExecutionStatus::Complete)
     }
 
     #[tokio::test]
     async fn get_results() {
-        let dune = get_dune();
+        let dune = DuneClient::from_env();
 
         #[derive(Deserialize, Debug)]
         struct ExpectedResults {
@@ -337,27 +309,44 @@ mod tests {
 
     #[tokio::test]
     async fn refresh() {
-        let dune = get_dune();
+        let dune = DuneClient::from_env();
 
         #[derive(Deserialize, Debug, PartialEq)]
         struct ResultStruct {
             text_field: String,
-            number_field: String,
-            date_field: String,
+            number_field: f64,
+            #[serde(deserialize_with = "datetime_from_str")]
+            date_field: DateTime<Utc>,
             list_field: String,
         }
         let results = dune
-            .refresh::<ResultStruct>(1215383, None, None)
+            .refresh::<ResultStruct>(
+                1215383,
+                Some(vec![Parameter::number("NumberField", "3.141592653589793")]),
+                None,
+            )
             .await
             .unwrap();
         assert_eq!(
             ResultStruct {
                 text_field: "Plain Text".to_string(),
-                number_field: "3.1415926535".to_string(),
-                date_field: "2022-05-04 00:00:00".to_string(),
+                number_field: std::f64::consts::PI,
+                date_field: date_parse("2022-05-04T00:00:00.0Z").unwrap(),
                 list_field: "Option 1".to_string(),
             },
             results.get_rows()[0]
         )
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn long_running_query() {
+        let dune = DuneClient::from_env();
+        let results = dune
+            .refresh::<HashMap<String, f64>>(1229120, None, None)
+            .await
+            .unwrap();
+        println!("Job ID {:?}", results.execution_id);
+        assert_eq!(results.state, ExecutionStatus::Complete);
     }
 }
