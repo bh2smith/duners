@@ -55,8 +55,9 @@ mod tests {
     #[tokio::test]
     async fn lazy_fetch_as_dataframe() {
         let dune = DuneClient::from_env();
+        // This query is a fork of the above, with all string fields.
         let df = dune
-            .fetch_as_dataframe::<HashMap<String, String>>(1215383, None, None)
+            .fetch_as_dataframe::<HashMap<String, String>>(1832271, None, None)
             .await
             .unwrap();
         println!("{:?}", df);
