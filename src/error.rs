@@ -45,6 +45,7 @@ impl From<polars::error::PolarsError> for DuneRequestError {
         DuneRequestError::Polars(value.to_string())
     }
 }
+
 #[cfg(test)]
 mod tests {
     use super::*;

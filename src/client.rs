@@ -339,6 +339,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore]
     async fn long_running_query() {
         let dune = DuneClient::from_env();
         let results = dune
