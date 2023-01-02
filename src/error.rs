@@ -16,10 +16,6 @@ pub enum DuneRequestError {
     Dune(String),
     /// Errors bubbled up from reqwest::Error
     Request(String),
-    // /// Errors bubbled up from Serde (de)serialization
-    // Serde(String),
-    // /// Errors bubbled up from PolarsError
-    // Polars(String),
 }
 
 impl From<DuneError> for DuneRequestError {
@@ -34,17 +30,6 @@ impl From<reqwest::Error> for DuneRequestError {
     }
 }
 
-// impl From<serde_json::Error> for DuneRequestError {
-//     fn from(value: serde_json::Error) -> Self {
-//         DuneRequestError::Serde(value.to_string())
-//     }
-// }
-
-// impl From<polars::error::PolarsError> for DuneRequestError {
-//     fn from(value: polars::error::PolarsError) -> Self {
-//         DuneRequestError::Polars(value.to_string())
-//     }
-// }
 #[cfg(test)]
 mod tests {
     use super::*;
