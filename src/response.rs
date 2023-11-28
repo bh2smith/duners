@@ -1,4 +1,4 @@
-use crate::dateutil::{datetime_from_str, optional_datetime_from_str};
+use crate::parse_utils::{datetime_from_str, optional_datetime_from_str};
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use serde_with::DeserializeFromStr;

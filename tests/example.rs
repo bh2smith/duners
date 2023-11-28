@@ -1,5 +1,5 @@
 use chrono::{DateTime, Utc};
-use duners::{client::DuneClient, dateutil::datetime_from_str, parameters::Parameter};
+use duners::{client::DuneClient, parameters::Parameter, parse_utils::datetime_from_str};
 use serde::Deserialize;
 
 // User must declare the expected query return fields and types!

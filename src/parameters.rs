@@ -69,7 +69,7 @@ impl Parameter {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::dateutil::date_parse;
+    use crate::parse_utils::date_parse;
 
     #[test]
     fn new_parameter() {
