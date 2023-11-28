@@ -94,7 +94,7 @@ impl DuneClient {
     }
 
     /// Execute Query (with or without parameters)
-    /// cf. [https://dune.com/docs/api/api-reference/execute-query-id](https://dune.com/docs/api/api-reference/execute-query-id)
+    /// cf. [https://dune.com/docs/api/api-reference/execute-queries/execute-query-id/](https://dune.com/docs/api/api-reference/execute-queries/execute-query-id/)
     pub async fn execute_query(
         &self,
         query_id: u32,
@@ -108,7 +108,7 @@ impl DuneClient {
     }
 
     /// Cancel Query Execution by `job_id`
-    /// cf. [https://dune.com/docs/api/api-reference/cancel-execution/](https://dune.com/docs/api/api-reference/cancel-execution/))
+    /// cf. [https://dune.com/docs/api/api-reference/execute-queries/cancel-execution/](https://dune.com/docs/api/api-reference/execute-queries/cancel-execution/)
     pub async fn cancel_execution(
         &self,
         job_id: &str,
@@ -121,7 +121,7 @@ impl DuneClient {
     }
 
     /// Get Query Execution Status (by `job_id`)
-    /// cf. [https://dune.com/docs/api/api-reference/execution-status/](https://dune.com/docs/api/api-reference/execution-status/)
+    /// cf. [https://dune.com/docs/api/api-reference/get-results/execution-status/](https://dune.com/docs/api/api-reference/get-results/execution-status/)
     pub async fn get_status(&self, job_id: &str) -> Result<GetStatusResponse, DuneRequestError> {
         let response = self
             ._get(job_id, "status")
@@ -131,7 +131,7 @@ impl DuneClient {
     }
 
     /// Get Query Execution Results (by `job_id`)
-    /// cf. [https://dune.com/docs/api/api-reference/execution-results/](https://dune.com/docs/api/api-reference/execution-results/)
+    /// cf. [https://dune.com/docs/api/api-reference/get-results/execution-results/](https://dune.com/docs/api/api-reference/get-results/execution-results/)
     pub async fn get_results<T: DeserializeOwned>(
         &self,
         job_id: &str,
@@ -151,7 +151,7 @@ impl DuneClient {
     /// * `query_id` - an integer representing query ID
     ///             (found at the end of a Dune Query URL: [https://dune.com/queries/971694](https://dune.com/queries/971694))
     /// * `parameters` - an optional list of query `Parameter`
-    ///             (cf. [https://dune.xyz/queries/1215383](https://dune.xyz/queries/1215383))
+    ///             (cf. [https://dune.xyz/queries/3238619](https://dune.xyz/queries/3238619))
     /// * `ping_frequency` - how frequently (in seconds) should the loop check execution status.
     ///             Default is 5 seconds. Too frequently could result in rate limiting
     ///             (i.e. Too Many Requests) especially when executing multiple queries in parallel.
