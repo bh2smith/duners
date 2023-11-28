@@ -94,7 +94,7 @@ impl DuneClient {
     }
 
     /// Execute Query (with or without parameters)
-    /// cf. [https://dune.com/docs/api/api-reference/execute-query-id](https://dune.com/docs/api/api-reference/execute-query-id)
+    /// cf. [https://dune.com/docs/api/api-reference/execute-queries/execute-query-id/](https://dune.com/docs/api/api-reference/execute-queries/execute-query-id/)
     pub async fn execute_query(
         &self,
         query_id: u32,
@@ -108,7 +108,7 @@ impl DuneClient {
     }
 
     /// Cancel Query Execution by `job_id`
-    /// cf. [https://dune.com/docs/api/api-reference/cancel-execution/](https://dune.com/docs/api/api-reference/cancel-execution/))
+    /// cf. [https://dune.com/docs/api/api-reference/execute-queries/cancel-execution/](https://dune.com/docs/api/api-reference/execute-queries/cancel-execution/)
     pub async fn cancel_execution(
         &self,
         job_id: &str,
@@ -121,7 +121,7 @@ impl DuneClient {
     }
 
     /// Get Query Execution Status (by `job_id`)
-    /// cf. [https://dune.com/docs/api/api-reference/execution-status/](https://dune.com/docs/api/api-reference/execution-status/)
+    /// cf. [https://dune.com/docs/api/api-reference/get-results/execution-status/](https://dune.com/docs/api/api-reference/get-results/execution-status/)
     pub async fn get_status(&self, job_id: &str) -> Result<GetStatusResponse, DuneRequestError> {
         let response = self
             ._get(job_id, "status")
@@ -131,7 +131,7 @@ impl DuneClient {
     }
 
     /// Get Query Execution Results (by `job_id`)
-    /// cf. [https://dune.com/docs/api/api-reference/execution-results/](https://dune.com/docs/api/api-reference/execution-results/)
+    /// cf. [https://dune.com/docs/api/api-reference/get-results/execution-results/](https://dune.com/docs/api/api-reference/get-results/execution-results/)
     pub async fn get_results<T: DeserializeOwned>(
         &self,
         job_id: &str,
@@ -151,7 +151,7 @@ impl DuneClient {
     /// * `query_id` - an integer representing query ID
     ///             (found at the end of a Dune Query URL: [https://dune.com/queries/971694](https://dune.com/queries/971694))
     /// * `parameters` - an optional list of query `Parameter`
-    ///             (cf. [https://dune.xyz/queries/1215383](https://dune.xyz/queries/1215383))
+    ///             (cf. [https://dune.xyz/queries/3238619](https://dune.xyz/queries/3238619))
     /// * `ping_frequency` - how frequently (in seconds) should the loop check execution status.
     ///             Default is 5 seconds. Too frequently could result in rate limiting
     ///             (i.e. Too Many Requests) especially when executing multiple queries in parallel.
@@ -160,7 +160,7 @@ impl DuneClient {
     /// ```
     /// use duners::{
     ///     client::DuneClient,
-    ///     dateutil::datetime_from_str,
+    ///     parse_utils::{datetime_from_str, f64_from_str},
     ///     error::DuneRequestError
     /// };
     /// use serde::Deserialize;
@@ -170,6 +170,7 @@ impl DuneClient {
     /// #[derive(Deserialize, Debug, PartialEq)]
     /// struct ResultStruct {
     ///     text_field: String,
+    ///     #[serde(deserialize_with = "f64_from_str")]
     ///     number_field: f64,
     ///     #[serde(deserialize_with = "datetime_from_str")]
     ///     date_field: DateTime<Utc>,
@@ -215,7 +216,7 @@ impl DuneClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::dateutil::{date_parse, datetime_from_str};
+    use crate::parse_utils::{date_parse, datetime_from_str, f64_from_str};
     use crate::response::ExecutionStatus;
     use chrono::{DateTime, Utc};
     use serde::Deserialize;
@@ -239,7 +240,7 @@ mod tests {
         let error = dune.execute_query(u32::MAX, None).await.unwrap_err();
         assert_eq!(
             error,
-            DuneRequestError::Dune(String::from("Query not found"))
+            DuneRequestError::Dune(String::from("An internal error occured"))
         )
     }
 
@@ -314,6 +315,7 @@ mod tests {
         #[derive(Deserialize, Debug, PartialEq)]
         struct ResultStruct {
             text_field: String,
+            #[serde(deserialize_with = "f64_from_str")]
             number_field: f64,
             #[serde(deserialize_with = "datetime_from_str")]
             date_field: DateTime<Utc>,
@@ -321,7 +323,7 @@ mod tests {
         }
         let results = dune
             .refresh::<ResultStruct>(
-                1215383,
+                3238619,
                 Some(vec![Parameter::number("NumberField", "3.141592653589793")]),
                 None,
             )
