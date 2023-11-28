@@ -1,11 +1,12 @@
 use chrono::{DateTime, Utc};
-use duners::{client::DuneClient, parameters::Parameter, parse_utils::datetime_from_str};
+use duners::{client::DuneClient, parameters::Parameter, parse_utils::datetime_from_str, parse_utils::f64_from_str};
 use serde::Deserialize;
 
 // User must declare the expected query return fields and types!
 #[derive(Deserialize, Debug, PartialEq)]
 struct ResultStruct {
     text_field: String,
+    #[serde(deserialize_with = "f64_from_str")]
     number_field: f64,
     #[serde(deserialize_with = "datetime_from_str")]
     date_field: DateTime<Utc>,
