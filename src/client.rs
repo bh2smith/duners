@@ -160,7 +160,7 @@ impl DuneClient {
     /// ```
     /// use duners::{
     ///     client::DuneClient,
-    ///     parse_utils::datetime_from_str,
+    ///     parse_utils::{datetime_from_str, f64_from_str},
     ///     error::DuneRequestError
     /// };
     /// use serde::Deserialize;
@@ -170,6 +170,7 @@ impl DuneClient {
     /// #[derive(Deserialize, Debug, PartialEq)]
     /// struct ResultStruct {
     ///     text_field: String,
+    ///     #[serde(deserialize_with = "f64_from_str")]
     ///     number_field: f64,
     ///     #[serde(deserialize_with = "datetime_from_str")]
     ///     date_field: DateTime<Utc>,
