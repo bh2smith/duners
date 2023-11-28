@@ -239,7 +239,7 @@ mod tests {
         let error = dune.execute_query(u32::MAX, None).await.unwrap_err();
         assert_eq!(
             error,
-            DuneRequestError::Dune(String::from("Query not found"))
+            DuneRequestError::Dune(String::from("An internal error occured"))
         )
     }
 
@@ -321,7 +321,7 @@ mod tests {
         }
         let results = dune
             .refresh::<ResultStruct>(
-                1215383,
+                3238619,
                 Some(vec![Parameter::number("NumberField", "3.141592653589793")]),
                 None,
             )
