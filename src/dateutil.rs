@@ -4,7 +4,7 @@ use serde::{de, Deserialize, Deserializer};
 
 fn date_string_parser(date_str: &str, format: &str) -> Result<DateTime<Utc>, ParseError> {
     let native = NaiveDateTime::parse_from_str(date_str, format);
-    Ok(DateTime::<Utc>::from_utc(native?, Utc))
+    Ok(DateTime::from_naive_utc_and_offset(native?, Utc))
 }
 
 /// The date format returned by DuneAPI response Date fields (e.g. `submitted_at`)

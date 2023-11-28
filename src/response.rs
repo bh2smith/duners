@@ -66,7 +66,7 @@ pub struct CancellationResponse {
 #[derive(Deserialize, Debug)]
 pub struct ResultMetaData {
     pub column_names: Vec<String>,
-    pub result_set_bytes: u16,
+    pub result_set_bytes: u64,
     pub total_row_count: u32,
     pub datapoint_count: u32,
     pub pending_time_millis: Option<u32>,
