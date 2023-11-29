@@ -3,7 +3,7 @@ use chrono::{DateTime, Utc};
 /// Dune supports 4 different parameter types enumerated here:
 /// In end, all parameters are passed to
 /// Dune via the API as JSON strings.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 enum ParameterType {
     /// A.k.a. string (used for transaction hashes and evm addresses, etc.)
     Text,
@@ -15,7 +15,7 @@ enum ParameterType {
     Date,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Parameter {
     /// Parameter Name.
     pub key: String,
