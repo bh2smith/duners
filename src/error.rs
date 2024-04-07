@@ -39,7 +39,7 @@ mod tests {
         let err = reqwest::get("invalid-url").await.unwrap_err();
         assert_eq!(
             DuneRequestError::from(err),
-            DuneRequestError::Request("builder error: relative URL without a base".to_string())
+            DuneRequestError::Request("builder error".to_string())
         );
         assert_eq!(
             DuneRequestError::from(DuneError {
