@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 use chrono::{DateTime, NaiveDateTime, ParseError, Utc};
 use serde::{de, Deserialize, Deserializer};
 use serde_json::Value;
@@ -51,13 +50,13 @@ where
 
 pub fn f64_from_str<'de, D>(deserializer: D) -> Result<f64, D::Error>
 where
-    D: serde::Deserializer<'de>,
+    D: Deserializer<'de>,
 {
     let value: Value = Deserialize::deserialize(deserializer)?;
     if let Value::String(s) = value {
-        s.parse().map_err(serde::de::Error::custom)
+        s.parse().map_err(de::Error::custom)
     } else {
-        Err(serde::de::Error::custom("Expected a string"))
+        Err(de::Error::custom("Expected a string"))
     }
 }
 

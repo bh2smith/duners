@@ -79,7 +79,7 @@ impl DuneClient {
     }
 
     /// Deserializes Responses into appropriate type.
-    /// Some "invalid" requests return response JSON, which are parsed an returned as Errors.
+    /// Some "invalid" requests return response JSON, which are parsed and returned as Errors.
     async fn _parse_response<T: DeserializeOwned>(resp: Response) -> Result<T, DuneRequestError> {
         if resp.status().is_success() {
             resp.json::<T>().await.map_err(DuneRequestError::from)

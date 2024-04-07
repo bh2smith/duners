@@ -28,7 +28,6 @@ async fn test_external_use() {
 
 #[tokio::test]
 async fn test_blocks() {
-    #[allow(dead_code)]
     #[derive(Deserialize, Debug, PartialEq)]
     struct Block {
         pub number: u64,
