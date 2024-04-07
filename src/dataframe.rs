@@ -27,7 +27,7 @@ impl DuneClient {
 
 #[cfg(test)]
 mod tests {
-    use crate::{client::DuneClient, dateutil::datetime_from_str};
+    use crate::{client::DuneClient, parse_utils::datetime_from_str};
     use chrono::{DateTime, Utc};
     use polars::export::ahash::HashMap;
     use serde::{Deserialize, Serialize};

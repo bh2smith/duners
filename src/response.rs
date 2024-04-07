@@ -1,4 +1,4 @@
-use crate::dateutil::{datetime_from_str, optional_datetime_from_str};
+use crate::parse_utils::{datetime_from_str, optional_datetime_from_str};
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use serde_with::DeserializeFromStr;
@@ -12,7 +12,7 @@ pub struct ExecutionResponse {
 }
 
 /// Represents all possible states of query execution.
-/// Most states are self explanatory.
+/// Most states are self-explanatory.
 /// Failure can occur if query takes too long (30 minutes) to execute.
 /// Pending state also comes along with a "queue position"
 #[derive(DeserializeFromStr, Debug, PartialEq)]
@@ -66,7 +66,7 @@ pub struct CancellationResponse {
 #[derive(Deserialize, Debug)]
 pub struct ResultMetaData {
     pub column_names: Vec<String>,
-    pub result_set_bytes: u16,
+    pub result_set_bytes: u64,
     pub total_row_count: u32,
     pub datapoint_count: u32,
     pub pending_time_millis: Option<u32>,

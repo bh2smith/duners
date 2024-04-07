@@ -9,7 +9,7 @@ enum ParameterType {
     Text,
     /// Encapsulates all numerical types (integer and float).
     Number,
-    /// A.k.a List or Dropdown of text.
+    /// A.k.a. List or Dropdown of text.
     Enum,
     /// Dune Date strings take the form `YYYY-MM-DD hh:mm:ss`
     Date,
@@ -69,7 +69,7 @@ impl Parameter {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::dateutil::date_parse;
+    use crate::parse_utils::date_parse;
 
     #[test]
     fn new_parameter() {
