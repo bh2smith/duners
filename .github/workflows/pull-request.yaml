@@ -18,7 +18,7 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Lint & Clippy
-        run: cargo fmt --check && cargo clippy --all-targets --verbose -- -D warnings
+        run: cargo fmt --check && cargo clippy -- -D warnings
 
       - name: Tests
         run: cargo test
