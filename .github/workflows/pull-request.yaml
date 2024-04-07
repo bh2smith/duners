@@ -10,13 +10,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions-rs/toolchain@v1
+    - uses: actions/checkout@v4
+    - name: Cache Cargo dependencies
+      uses: actions/cache@v4
       with:
-        toolchain: stable
-    - run: cargo check
-    - run: cargo fmt -- --check
-    - run: cargo clippy --locked --workspace --all-features --all-targets -- -D warnings
-    - run: cargo test
+        path: |
+          ~/.cargo
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Lint & Clippy
+      run: cargo fmt --check && cargo clippy --all-targets --verbose -- -D warnings
+
+    - name: Tests
+      run: cargo test
       env:
         DUNE_API_KEY: ${{ secrets.DUNE_API_KEY }}
