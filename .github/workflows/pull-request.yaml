@@ -1,28 +1,26 @@
-name: Rust CI
+name: Rust Lint, Clippy & Tests
 
 on:
   pull_request:
-  push:
-    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Cache Cargo dependencies
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.cargo
-          target
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - uses: actions/checkout@v4
+      - name: Cache Cargo dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-    - name: Lint & Clippy
-      run: cargo fmt --check && cargo clippy --all-targets --verbose -- -D warnings
+      - name: Lint & Clippy
+        run: cargo fmt --check && cargo clippy --all-targets --verbose -- -D warnings
 
-    - name: Tests
-      run: cargo test
-      env:
-        DUNE_API_KEY: ${{ secrets.DUNE_API_KEY }}
+      - name: Tests
+        run: cargo test
+        env:
+          DUNE_API_KEY: ${{ secrets.DUNE_API_KEY }}

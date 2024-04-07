@@ -9,7 +9,7 @@ enum ParameterType {
     Text,
     /// Encapsulates all numerical types (integer and float).
     Number,
-    /// A.k.a List or Dropdown of text.
+    /// A.k.a. List or Dropdown of text.
     Enum,
     /// Dune Date strings take the form `YYYY-MM-DD hh:mm:ss`
     Date,

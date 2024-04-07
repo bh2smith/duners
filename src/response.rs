@@ -12,7 +12,7 @@ pub struct ExecutionResponse {
 }
 
 /// Represents all possible states of query execution.
-/// Most states are self explanatory.
+/// Most states are self-explanatory.
 /// Failure can occur if query takes too long (30 minutes) to execute.
 /// Pending state also comes along with a "queue position"
 #[derive(DeserializeFromStr, Debug, PartialEq)]
