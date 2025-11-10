@@ -24,7 +24,7 @@ const BASE_URL: &str = "https://api.dune.com/api/v1";
 /// - GET
 ///     - get_status
 ///     - get_results
-/// 
+///
 /// Furthermore, this interface also implements a convenience method `refresh` which acts as follows:
 /// 1. Execute query
 /// 2. While execution status is not in a terminal state, sleep and check again
