@@ -10,6 +10,7 @@ use serde::de::DeserializeOwned;
 use serde_json::json;
 use std::collections::HashMap;
 use std::env;
+use std::fmt::Debug;
 use tokio::time::{sleep, Duration};
 
 const BASE_URL: &str = "https://api.dune.com/api/v1";
@@ -140,6 +141,7 @@ impl DuneClient {
             ._get(job_id, "results")
             .await
             .map_err(DuneRequestError::from)?;
+        debug!("Raw Response {:?}", response);
         DuneClient::_parse_response::<GetResultResponse<T>>(response).await
     }
 
@@ -185,7 +187,7 @@ impl DuneClient {
     ///     Ok(())
     /// }
     /// ```
-    pub async fn refresh<T: DeserializeOwned>(
+    pub async fn refresh<T: DeserializeOwned + Debug>(
         &self,
         query_id: u32,
         parameters: Option<Vec<Parameter>>,
@@ -203,6 +205,7 @@ impl DuneClient {
             status = self.get_status(&job_id).await?
         }
         let full_response = self.get_results::<T>(&job_id).await;
+        debug!("Full Response {:?}", full_response);
         if status.state == ExecutionStatus::Failed {
             warn!(
                 "{:?} Perhaps your query took too long to run!",
