@@ -222,7 +222,7 @@ mod tests {
     use serde::Deserialize;
 
     const QUERY_ID: u32 = 971694;
-    const JOB_ID: &str = "01GMZ8R4NPPQZCWYJRY2K03MH0";
+    const JOB_ID: &str = "01K9QTN27XQTXQV59BKBJ4GKFW";
 
     #[tokio::test]
     async fn invalid_api_key() {
@@ -304,7 +304,7 @@ mod tests {
         let rows = results.result.rows;
         assert_eq!(1, rows.len());
         assert_eq!(rows[0].symbol, "WETH");
-        assert_eq!(rows[0].token, "\\xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2");
+        assert_eq!(rows[0].token, "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2");
         assert!(rows[0].max_price > 4148.0)
     }
 
