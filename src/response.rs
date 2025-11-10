@@ -66,7 +66,13 @@ pub struct CancellationResponse {
 #[derive(Deserialize, Debug)]
 pub struct ResultMetaData {
     pub column_names: Vec<String>,
+    #[serde(default)]
+    pub column_types: Option<Vec<String>>,
+    #[serde(default)]
+    pub row_count: Option<u32>,
     pub result_set_bytes: u64,
+    #[serde(default)]
+    pub total_result_set_bytes: Option<u64>,
     pub total_row_count: u32,
     pub datapoint_count: u32,
     pub pending_time_millis: Option<u32>,
@@ -129,6 +135,8 @@ pub struct ExecutionResult<T> {
 pub struct GetResultResponse<T> {
     pub execution_id: String,
     pub query_id: u32,
+    #[serde(default)]
+    pub is_execution_finished: Option<bool>,
     pub state: ExecutionStatus,
     // TODO - this `flatten` isn't what I had hoped for.
     //  I want the `times` field to disappear
@@ -222,7 +230,10 @@ mod tests {
                     queue_position: Some(10),
                     result_metadata: Some(ResultMetaData {
                         column_names: vec![],
+                        column_types: None,
+                        row_count: None,
                         result_set_bytes: 0,
+                        total_result_set_bytes: None,
                         total_row_count: 0,
                         datapoint_count: 0,
                         pending_time_millis: None,
@@ -244,7 +255,10 @@ mod tests {
                 queue_position: Some(10), \
                 result_metadata: Some(ResultMetaData { \
                         column_names: [], \
+                        column_types: None, \
+                        row_count: None, \
                         result_set_bytes: 0, \
+                        total_result_set_bytes: None, \
                         total_row_count: 0, \
                         datapoint_count: 0, \
                         pending_time_millis: None, \
@@ -258,6 +272,7 @@ mod tests {
                 GetResultResponse {
                     execution_id: execution_id.to_string(),
                     query_id,
+                    is_execution_finished: None,
                     state: ExecutionStatus::Complete,
                     times: ExecutionTimes {
                         submitted_at: Default::default(),
@@ -270,7 +285,10 @@ mod tests {
                         rows: vec![],
                         metadata: ResultMetaData {
                             column_names: vec![],
+                            column_types: None,
+                            row_count: None,
                             result_set_bytes: 0,
+                            total_result_set_bytes: None,
                             total_row_count: 0,
                             datapoint_count: 0,
                             pending_time_millis: None,
@@ -282,6 +300,7 @@ mod tests {
             "GetResultResponse { \
                 execution_id: \"jerb ID\", \
                 query_id: 71, \
+                is_execution_finished: None, \
                 state: Complete, \
                 times: ExecutionTimes { \
                     submitted_at: 1970-01-01T00:00:00Z, \
@@ -294,7 +313,10 @@ mod tests {
                     rows: [], \
                     metadata: ResultMetaData { \
                         column_names: [], \
+                        column_types: None, \
+                        row_count: None, \
                         result_set_bytes: 0, \
+                        total_result_set_bytes: None, \
                         total_row_count: 0, \
                         datapoint_count: 0, \
                         pending_time_millis: None, \

@@ -24,8 +24,8 @@ const BASE_URL: &str = "https://api.dune.com/api/v1";
 /// - GET
 ///     - get_status
 ///     - get_results
-/// Furthermore, this interface also implements a convenience method `refresh`
-/// which acts as follows:
+///
+/// Furthermore, this interface also implements a convenience method `refresh` which acts as follows:
 /// 1. Execute query
 /// 2. While execution status is not in a terminal state, sleep and check again
 /// 3. Get and return execution results.
@@ -149,12 +149,12 @@ impl DuneClient {
     /// 3. fetch and return query results.
     /// # Arguments
     /// * `query_id` - an integer representing query ID
-    ///             (found at the end of a Dune Query URL: [https://dune.com/queries/971694](https://dune.com/queries/971694))
+    ///   (found at the end of a Dune Query URL: [https://dune.com/queries/971694](https://dune.com/queries/971694))
     /// * `parameters` - an optional list of query `Parameter`
-    ///             (cf. [https://dune.xyz/queries/3238619](https://dune.xyz/queries/3238619))
+    ///   (cf. [https://dune.xyz/queries/3238619](https://dune.xyz/queries/3238619))
     /// * `ping_frequency` - how frequently (in seconds) should the loop check execution status.
-    ///             Default is 5 seconds. Too frequently could result in rate limiting
-    ///             (i.e. Too Many Requests) especially when executing multiple queries in parallel.
+    ///   Default is 5 seconds. Too frequently could result in rate limiting
+    ///   (i.e. Too Many Requests) especially when executing multiple queries in parallel.
     ///
     /// # Examples
     /// ```
@@ -222,7 +222,7 @@ mod tests {
     use serde::Deserialize;
 
     const QUERY_ID: u32 = 971694;
-    const JOB_ID: &str = "01GMZ8R4NPPQZCWYJRY2K03MH0";
+    const JOB_ID: &str = "01K9QTN27XQTXQV59BKBJ4GKFW";
 
     #[tokio::test]
     async fn invalid_api_key() {
@@ -304,7 +304,7 @@ mod tests {
         let rows = results.result.rows;
         assert_eq!(1, rows.len());
         assert_eq!(rows[0].symbol, "WETH");
-        assert_eq!(rows[0].token, "\\xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2");
+        assert_eq!(rows[0].token, "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2");
         assert!(rows[0].max_price > 4148.0)
     }
 

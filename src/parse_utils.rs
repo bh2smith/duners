@@ -14,7 +14,9 @@ pub fn date_parse(date_str: &str) -> Result<DateTime<Utc>, ParseError> {
 
 /// The Date format returned from data fields of type timestamp.
 pub fn dune_date(date_str: &str) -> Result<DateTime<Utc>, ParseError> {
+    // Try with microseconds first
     date_string_parser(date_str, "%Y-%m-%d %H:%M:%S.%f")
+        .or_else(|_| date_string_parser(date_str, "%Y-%m-%d %H:%M:%S"))
 }
 
 pub fn datetime_from_str<'de, D>(deserializer: D) -> Result<DateTime<Utc>, D::Error>
@@ -76,6 +78,15 @@ mod tests {
     #[test]
     fn new_dune_date() {
         let date_str = "2022-05-04 00:00:00.000";
+        assert_eq!(
+            dune_date(date_str).unwrap().to_string(),
+            "2022-05-04 00:00:00 UTC"
+        )
+    }
+
+    #[test]
+    fn dune_date_without_microseconds() {
+        let date_str = "2022-05-04 00:00:00";
         assert_eq!(
             dune_date(date_str).unwrap().to_string(),
             "2022-05-04 00:00:00 UTC"
